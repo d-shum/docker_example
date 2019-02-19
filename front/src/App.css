@@ -1,0 +1,18 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.app .counter {
+  color: cornflowerblue;
+  font-size: 350px;
+  font-family: sans-serif;
+}
+
+.app button {
+  width: 350px;
+  height: 150px;
+}
