@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+
+    front:
+        build: ./front
+        ports:
+          - target: 80
+            published: 80
+            protocol: tcp
+    back:
+        build: ./back
