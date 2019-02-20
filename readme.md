@@ -1,19 +1,40 @@
-Для запуска проекта `docker-compose up`
-docker-compose собирает контейнеры создает и запускает сервис на локалхосте.
+Проект состоит из двух частей 
+# Фронтенд в front 
+ image докера с двух этапной сборкой сначала  билдится фронтовой проект, потом результаты билда копируются в image nginx. Так же копируется кастомный конфиг нжиникса необходимый для проксирования запросов к контейнеру бека.  
+# Бакенд back 
+ image докера на основе node, внутри простейший сервер возвращаю количество обращений к нему с момента запуска.
+ 
+# Запуск локально
+Все команды внутри docker_example.
 
-Для деплоя нужно создать swarm на целевой машине
-`docker-machine ssh target_machine`
-Опционально включить в него столько сколько нужно машин `docker swarm join --token  xxx`
+* Запускается  проект по средствам
+`docker-compose up –d`
+`docker-compose` автоматом собирает  image описаные в docker-compose.yml на основе Dockerfile лежащих в папках front/back
+При переходе на <http://localhost/> отобразится фронт
 
-Создаем registry образов
-docker service create --name registry --publish published=5000,target=5000 registry:2
+* Проверить статус контейнеров можно командой docker ps.
+Для того чтобы остановить контейнеры, нужно там же выполнить  docker-compose down
 
-Добавляем в исключения докера наш registry
-где xx.xx.xx.xx:5000  айпи адрес и порт машины
-`/etc/docker/daemon.json`  для линукса
-у винды есьт интерфейс
-{ "insecure-registries":["xx.xx.xx.xx:5000"] }
-`docker-compose push` пушим образы затрагиваемые compose фаилом в registry на целевую машину
+# Деплой
 
-переключаемся  на докер целевой машины `eval $(docker-machine env target_machine)`
-docker stack deploy -c docker-compose.yml service_name 
+Тут мы деплоим в кластер состоящий из одной машины.
+
+* создаем машину `docker-machine create target_machine` она  будет единственным node нашего кластера, являсь и manager и worker одновременно.
+
+* нужно создать swarm(режим распределенной работы) на целевой машине для этого переейти в машину `docker-machine ssh target_machine` и выполнить `swarm init` после этого станут доступны `docker stack` и `docker service` предназанченные для работы с распределенными контейнерами Опционально включить в него столько сколько нужно машин docker swarm join --token xxx
+
+* Создаем registry образов на нашей машине  docker service create --name registry --publish published=5000,target=5000 registry:2
+
+* выходим из машины exit
+
+* на локальной машине Добавляем в исключения докера наш registry где xx.xx.xx.xx:5000 айпи адрес и порт. Для линукса создаем 
+/etc/docker/daemon.json и добавляем  `{"insecure-registries":["xx.xx.xx.xx:5000"]}`  у винды есть GUI. Ip машины узнать можно через `docker-machine ip target_machine` 
+
+* docker-compose push пушим образы затрагиваемые compose фаилом в registry на целевую машину
+
+* Для того чтобы проводить команды докера на целевой машине но иметь доступ к лоакльной фаиловой системе где лежит наш фаил docker compose переключаемся на докер целевой машины. Команда  `docker-machine env target_machine` покажет как установиьт переменные докера на ОС вашей машины. Для линукса эта команда выглядет так `eval $(docker-machine env target_machine)` 
+
+* Непосредственно деплой осуществляется командой `docker stack deploy -c docker-compose.yml service_name`. Для редеплоя нужно использовать команду  `docker stack update -c docker-compose.yml service_name`
+ 
+* Чтобы вернутся к локальному докеру необходимо вписать `docker-machine env -u` и выполнить предложенную команду.
+* При переходе на <http://ip-машины/> отобразится фронт
